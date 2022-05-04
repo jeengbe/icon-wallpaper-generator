@@ -1,5 +1,4 @@
-import { iconCodes } from "./codes";
-import { Icon } from "./icon";
+import { CircleIcon, getRandomIcon, Icon } from "./icon";
 import type { Palette } from "./palette";
 
 export class Wallpaper {
@@ -25,9 +24,9 @@ export class Wallpaper {
   }
 
   protected setupIcons() {
-    const minGap = 100;
+    const minGap = 120;
 
-    const size = 48;
+    const size = 32;
     const xIcons = Math.floor(this.canvas.width / (size + minGap));
     const xGap = this.canvas.width / xIcons - size;
 
@@ -48,14 +47,20 @@ export class Wallpaper {
   protected drawIcons() {
     for (const row of this.icons) {
       for (const icon of row) {
-        icon.draw();
+        icon.update();
       }
     }
   }
 
   protected randomIcon(x: number, y: number, buffer: number): Icon {
-    const icon = iconCodes[Math.floor(Math.random() * iconCodes.length)];
-    return new Icon(this.ctx, icon, this.palette.getIconFont(), this.palette.getIconColor(), x, y, buffer);
+    let rotation = 0;
+    if (Math.random() < .05) {
+      const maxRotation = Math.PI / 8;
+      const minRotation = -Math.PI / 8;
+      rotation = Math.random() * (maxRotation - minRotation) + minRotation;
+    }
+
+    return new CircleIcon(this.ctx, getRandomIcon(), this.palette.getIconFont(), "#333", x, y, buffer, rotation, this.palette.getIconColor());
   }
 
 
@@ -70,16 +75,9 @@ export class Wallpaper {
     const x = Math.floor(Math.random() * this.icons.length);
     const y = Math.floor(Math.random() * this.icons[x].length);
     const icon = this.icons[x][y];
-
-    if (Math.random() < .8) {
-      icon.setColor(this.palette.getIconColor());
+    if (icon.tick(this.palette)) {
       icon.fillBackground(this.palette.getBackgroundColor());
-      icon.draw();
-    }
-    if (Math.random() < .2) {
-      icon.setName(iconCodes[Math.floor(Math.random() * iconCodes.length)]);
-      icon.fillBackground(this.palette.getBackgroundColor());
-      icon.draw();
+      icon.update();
     }
   }
 }
