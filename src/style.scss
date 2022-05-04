@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+@import "line-awesome/dist/line-awesome/scss/variables";
+$la-font-path: "line-awesome/dist/line-awesome/fonts";
+@import "line-awesome/dist/line-awesome/scss/path";
