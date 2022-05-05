@@ -47,10 +47,8 @@ export class Icon {
     return this.color.getTo();
   }
   setColor(color: Color, animate = true) {
-    if (color !== this.color.getValue()) {
-      this.scheduler.pushAnimation();
-      this.color.animate(color, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this));
-    }
+    this.scheduler.pushAnimation();
+    this.color.animate(color, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this.scheduler));
 
     return this;
   }
@@ -59,32 +57,35 @@ export class Icon {
     return this.rotation.getTo();
   }
   setRotation(rotation: number, animate = true) {
-    if (rotation !== this.rotation.getValue()) {
-      this.scheduler.pushAnimation();
-      this.rotation.animate(rotation, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this));
-    }
+    this.scheduler.pushAnimation();
+    this.rotation.animate(rotation, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this.scheduler));
 
     return this;
   }
 
-  setLocation(x: number, y: number, animate = true) {
-    if (x !== this.x.getValue() || y !== this.y.getValue()) {
-      this.scheduler.pushAnimation();
-      this.scheduler.pushAnimation();
-      this.x.animate(x, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this));
-      this.y.animate(y, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this));
-    }
+  getPosition() {
+    return { x: this.x.getTo(), y: this.y.getTo() };
+  }
+  getPositionTransition() {
+    return { x: this.x, y: this.y };
+  }
+  setPosition({ x, y }: { x: number, y: number; }, animate = true) {
+    this.scheduler.pushAnimation();
+    this.scheduler.pushAnimation();
+    this.x.animate(x, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this.scheduler));
+    this.y.animate(y, animate ? ANIMATION_DURATION : 0, this.scheduler.popAnimation.bind(this.scheduler));
 
     return this;
   }
 
-  render() {
-    document.fonts.load(this.renderOptions.font).then(this.draw.bind(this, this.x.getValue(), this.y.getValue(), this.rotation.getValue()));
+
+  render(now: number) {
+    document.fonts.load(this.renderOptions.font).then(this.draw.bind(this, this.x.getValue(now), this.y.getValue(now), this.rotation.getValue(now), now));
   }
 
-  protected draw(x: number, y: number, rotation: number) {
+  protected draw(x: number, y: number, rotation: number, now: number) {
     const { font } = this.renderOptions;
-    const color = this.color.getValue();
+    const color = this.color.getValue(now);
 
     this.ctx.save();
     this.ctx.font = font;

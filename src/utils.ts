@@ -6,7 +6,7 @@ export class Transition<T extends number | Color> {
   private from: T;
   private to: T;
   private value: T;
-  private isAnimating: boolean;
+  #isAnimating: boolean;
   private easing: (progress: number) => number;
   private start: number;
   private duration: number;
@@ -16,7 +16,12 @@ export class Transition<T extends number | Color> {
     if (typeof from === "number" || typeof to === "number") {
       return <number>from + (<number>to - <number>from) * progress as T;
     } else {
-      return mix(from, to, 100 * (1 - progress)).hex as T;
+      try {
+        return mix(from, to, 100 * (1 - progress)).hex as T;
+      } catch (e) {
+        console.error(e);
+        return from;
+      }
     }
   }
 
@@ -24,14 +29,18 @@ export class Transition<T extends number | Color> {
     this.from = from;
     this.to = from;
     this.value = from;
-    this.isAnimating = false;
+    this.#isAnimating = false;
     this.easing = x => 1 - (1 - x) * (1 - x);
     this.start = 0;
     this.duration = 0;
   }
 
-  getValue() {
-    if (this.isAnimating) this.update();
+  isAnimating() {
+    return this.#isAnimating;
+  }
+
+  getValue(now: number) {
+    if (this.#isAnimating) this.update(now);
     return this.value;
   }
 
@@ -40,21 +49,21 @@ export class Transition<T extends number | Color> {
   }
 
   animate(to: T, duration: number, onDone?: () => unknown) {
-    if (this.isAnimating) this.onDone?.();
+    if (this.#isAnimating) this.onDone?.();
     this.from = this.value;
     this.to = to;
     this.duration = duration;
-    this.start = Date.now();
-    this.isAnimating = true;
+    this.start = performance.now();
+    this.#isAnimating = true;
     this.onDone = onDone;
-    return to;
   }
 
-  private update() {
-    const progress = (Date.now() - this.start) / this.duration;
+  private update(now: number) {
+    const progress = (now - this.start) / this.duration;
     if (progress >= 1) {
-      this.from = this.value = this.to;
-      this.isAnimating = false;
+      this.from = this.to;
+      this.value = this.to;
+      this.#isAnimating = false;
       this.onDone?.();
     } else {
       this.value = this.morph(this.from, this.to, this.easing(progress));
@@ -64,16 +73,13 @@ export class Transition<T extends number | Color> {
 
 export class Scheduler {
   private jobs = 0;
-  private lastFrame = 0;
   private raf?: number;
 
   constructor(
-    private render: () => void,
-    private fps = 144
+    private render: (now: number) => void
   ) { }
 
   start() {
-    this.jobs = 0;
     this.tick();
   }
 
@@ -88,15 +94,11 @@ export class Scheduler {
 
   popAnimation() {
     this.jobs--;
-    if (this.jobs === 0) this.stop();
+    if (this.jobs <= 0) this.stop();
   }
 
   private tick() {
-    const now = Date.now();
-    const delta = now - this.lastFrame;
-    if (delta > 1000 / this.fps) {
-      this.render();
-    }
+    this.render(performance.now());
     this.raf = requestAnimationFrame(this.tick.bind(this));
   }
 }

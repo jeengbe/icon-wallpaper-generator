@@ -1,5 +1,5 @@
 import { getRandomIconName, Icon } from "./icon";
-import type { Palette } from "./palette";
+import type { IconTickFunction, Palette } from "./palette";
 import { randomElement, Scheduler } from "./utils";
 
 export class Wallpaper {
@@ -17,12 +17,12 @@ export class Wallpaper {
     this.canvas.height = window.innerHeight;
 
     this.setupIcons();
-    this.render();
+    this.render(performance.now());
   }
 
-  render() {
+  render(now: number) {
     this.renderBackground();
-    this.renderIcons();
+    this.renderIcons(now);
   }
 
   protected renderBackground() {
@@ -47,17 +47,15 @@ export class Wallpaper {
         const x = (i + .5) * (xGap + size);
         const y = (j + .5) * (yGap + size);
         const icon = this.generateRandomIcon(x, y, size + minGap / 2);
-        // @ts-ignore
-        window.icon = icon;
         this.icons[i][j] = icon;
       }
     }
   }
 
-  protected renderIcons() {
+  protected renderIcons(now: number) {
     for (const row of this.icons) {
       for (const icon of row) {
-        icon.render();
+        icon.render(now);
       }
     }
   }
@@ -92,7 +90,7 @@ export class Wallpaper {
     setTimeout(() => {
       this.tickRandomIcon();
       this.startTickTimer();
-    }, Math.random() * 100);
+    }, Math.random() * 1000);
   }
 
   protected tickRandomIcon() {
@@ -100,6 +98,6 @@ export class Wallpaper {
     const y = Math.floor(Math.random() * this.icons[x].length);
     const icon = this.icons[x][y];
 
-    randomElement(this.palette.getIconTicks())(icon);
+    randomElement<IconTickFunction>(this.palette.getIconTicks())(icon, this.icons, x, y);
   }
 }
