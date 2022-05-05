@@ -22,7 +22,7 @@ export abstract class Palette {
           const minRotation = -Math.PI / 2;
           const rotation = Math.random() * (maxRotation - minRotation) + minRotation;
 
-          icon.setRotation(icon.getRotation() + rotation);
+          icon.setRotation(rotation);
         },
         probability: .25
       },
